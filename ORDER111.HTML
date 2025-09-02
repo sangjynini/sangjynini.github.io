@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>도시위원회 주문 메모</title>
+    <style>
+        /* CSS 변수 설정 */
+        :root {
+            --bg: #f8fafc;
+            --line: #e2e8f0;
+            --text: #0f172a;
+            --accent: #0f172a;
+            --red: #fca5a5;
+            --red-bg: #fee2e2;
+        }
+
+        /* 기본 스타일 */
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Apple SD Gothic Neo, Noto Sans KR, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        h1 { font-size: 24px; margin-top: 0; }
+        h2 { font-size: 16px; margin-top: 18px; margin-bottom: 8px; }
+
+        header {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        header .spacer { flex: 1; }
+
+        input[type="text"], textarea, button {
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: #f1f5d9; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid var(--line);
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th { background: #f1f5f9; }
+
+        .pill-row { margin-bottom: 6px; }
+        .pill {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 2px 2px 0 0;
+            display: inline-block;
+        }
+        .pill.on {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .pill.on:hover {
+            background: var(--accent);
+            opacity: 0.9;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 260px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            resize: vertical; /* 세로 크기 조절 가능 */
+        }
+        
+        .reset-btn {
+            background: var(--red-bg);
+            border-color: var(--red);
+        }
+        .reset-btn:hover { background: #ffdada; }
+        
+        .copy-btn {
+            background: #d1fae5;
+            border-color: #34d399;
+            margin-top: 8px;
+        }
+        .copy-btn:hover { background: #b0f5d7; }
+        
+        .notes-input { width: calc(100% - 10px); }
+        .menu-input { margin-top: 5px; width: calc(100% - 10px); }
+        
+        /* New styles for the button group */
+        #store-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .store-pill {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .store-pill.on {
+            background: var(--red-bg);
+            border-color: var(--red);
+        }
+        .menu-info-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        #addPersonContainer {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        #newPersonInput {
+            flex: 1;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>도시위원회 주문 메모</h1>
+    <header>
+        <label>가게 이름&nbsp;<input id="store" type="text" placeholder="가게 이름/위치" /></label>
+        <span class="spacer"></span>
+        <button id="resetBtn" class="reset-btn">RESET</button>
+    </header>
+
+    <h2>자주 시키는 가게</h2>
+    <div id="store-links">
+        <button id="sigolCoffeeBtn" class="store-pill">시골커피</button>
+        <div id="sigolCoffeeButtons" class="menu-info-buttons" style="display:none;">
+            <a href="tel:01094938625"><button>📞 전화걸기</button></a>
+            <a href="https://m.place.naver.com/restaurant/1706757281/menu/list" target="_self"><button>📱 메뉴판보기</button></a>
+        </div>
+        
+        <button id="shinsongSushiBtn" class="store-pill">신송초밥</button>
+        <div id="shinsongSushiButtons" class="menu-info-buttons" style="display:none;">
+            <a href="tel:0512064228"><button>📞 전화걸기</button></a>
+            <button id="shinsongSearchBtn">네이버 검색</button>
+        </div>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>이름</th>
+                <th>메뉴</th>
+                <th>비고</th>
+            </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+    </table>
+
+    <div id="addPersonContainer">
+        <button id="addPersonBtn">👤 인원 추가</button>
+        <input type="text" id="newPersonInput" placeholder="추가할 이름 입력 후 엔터" />
+    </div>
+
+    <h2>주문 요약</h2>
+    <textarea id="summary" readonly></textarea>
+    <button id="copyBtn" class="copy-btn">📋 클립보드에 복사하기</button>
+
+<script>
+(function(){
+    const STORAGE_KEY = "committee-order-memo-v15";
+    const DEFAULT_NAMES = ["위원장", "유동철", "유영현", "장재희", "신현수", "전영애", "박정순", "과장", "계장", "이상준", "양진영", "김지혜"];
+    let NAMES = [...DEFAULT_NAMES];
+    
+    const MENUS = {
+        "시골커피": {
+            cats: ["미선택", "아메리카노", "라떼", "레몬티", "쉐이크", "디카페인"],
+            temps: ["미선택", "핫", "아이스"]
+        },
+        "신송초밥": {
+            cats: ["미선택", "생대구탕", "생태탕", "대구탕", "조기탕", "알탕", "회덮밥", "생선초밥"],
+            temps: ["미선택"],
+            prices: {
+                "생대구탕": 18000,
+                "생태탕": 18000,
+                "회덮밥": 18000,
+                "생선초밥": 18000,
+                "대구탕": 15000,
+                "조기탕": 15000,
+                "알탕": 15000
+            }
+        }
+    };
+    
+    let state = {};
+
+    const storeEl = document.getElementById("store");
+    const tbody = document.getElementById("tbody");
+    const summary = document.getElementById("summary");
+    const resetBtn = document.getElementById("resetBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    
+    const sigolCoffeeBtn = document.getElementById("sigolCoffeeBtn");
+    const sigolCoffeeButtons = document.getElementById("sigolCoffeeButtons");
+    const shinsongSushiBtn = document.getElementById("shinsongSushiBtn");
+    const shinsongSushiButtons = document.getElementById("shinsongSushiButtons");
+    const shinsongSearchBtn = document.getElementById("shinsongSearchBtn");
+    
+    const addPersonBtn = document.getElementById("addPersonBtn");
+    const newPersonInput = document.getElementById("newPersonInput");
+
+    function saveState() {
+        state.lastAccess = new Date().getTime();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const loadedState = JSON.parse(raw);
+                const lastAccess = loadedState.lastAccess || 0;
+                const currentTime = new Date().getTime();
+                const oneDay = 24 * 60 * 60 * 1000;
+
+                if (currentTime - lastAccess > oneDay) {
+                    return defaults();
+                }
+                
+                return loadedState;
+            }
+        } catch(e) {
+            console.error("Failed to load state from localStorage", e);
+        }
+
+        return defaults();
+    }
+
+    function defaults() {
+        NAMES = [...DEFAULT_NAMES];
+        const orders = {};
+        NAMES.forEach(n => orders[n] = { cat: "미선택", item: "", temp: "미선택", notes: "" });
+        
+        orders["위원장"] = { cat: "아메리카노", item: "", temp: "아이스", notes: "" };
+        orders["유동철"] = { cat: "레몬티", item: "", temp: "핫", notes: "" };
+        orders["유영현"] = { cat: "아메리카노", item: "", temp: "아이스", notes: "" };
+        orders["이상준"] = { cat: "아메리카노", item: "", temp: "아이스", notes: "" };
+        orders["과장"] = { cat: "디카페인", item: "", temp: "아이스", notes: "" };
+        
+        return { 
+            store: "시골커피", 
+            orders, 
+            menu: MENUS["시골커피"], 
+            extraNames: [],
+            lastAccess: new Date().getTime()
+        };
+    }
+
+    function render() {
+        buildTable();
+        updateSummary();
+    }
+
+    function createPill(label, active, onClick) {
+        const b = document.createElement("button");
+        b.className = "pill" + (active ? " on" : "");
+        b.textContent = label;
+        b.addEventListener("click", onClick);
+        return b;
+    }
+
+    function buildTable() {
+        tbody.innerHTML = "";
+        NAMES.forEach(n => {
+            const o = state.orders[n] || { cat: "미선택", item: "", temp: "미선택", notes: "" };
+            const tr = document.createElement("tr");
+
+            const tdName = document.createElement("td");
+            tdName.textContent = n;
+            tr.appendChild(tdName);
+
+            const tdMenu = document.createElement("td");
+            
+            const catRow = document.createElement("div");
+            catRow.className = "pill-row";
+            state.menu.cats.forEach(c => catRow.appendChild(createPill(c, o.cat === c, () => {
+                o.cat = c;
+                if(state.store === "신송초밥") {
+                    o.temp = "미선택";
+                    o.item = "";
+                }
+                state.orders[n] = o;
+                saveState();
+                render();
+            })));
+            tdMenu.appendChild(catRow);
+
+            const item = document.createElement("input");
+            item.type = "text";
+            item.className = "menu-input";
+            item.placeholder = "세부 메뉴 (예: 바닐라 라떼)";
+            item.value = o.item;
+            item.addEventListener("input", () => {
+                o.item = item.value;
+                state.orders[n] = o;
+                saveState();
+                updateSummary();
+            });
+            tdMenu.appendChild(item);
+
+            if (state.store === "시골커피") {
+                const tempRow = document.createElement("div");
+                tempRow.className = "pill-row";
+                state.menu.temps.forEach(t => tempRow.appendChild(createPill(t, o.temp === t, () => {
+                    o.temp = t;
+                    state.orders[n] = o;
+                    saveState();
+                    render();
+                })));
+                tdMenu.appendChild(tempRow);
+            }
+
+            tr.appendChild(tdMenu);
+
+            const tdNotes = document.createElement("td");
+            const notes = document.createElement("input");
+            notes.type = "text";
+            notes.className = "notes-input";
+            notes.placeholder = "비고 (예: 샷 추가, 시럽 빼고)";
+            notes.value = o.notes;
+            notes.addEventListener("input", () => {
+                o.notes = notes.value;
+                state.orders[n] = o;
+                saveState();
+                updateSummary();
+            });
+            tdNotes.appendChild(notes);
+            tr.appendChild(tdNotes);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateSummary() {
+        const lines = [];
+        const summaryCounts = new Map();
+        const detailLines = [];
+        let totalPrice = 0;
+
+        NAMES.forEach(n => {
+            const o = state.orders[n];
+            if (o && o.cat !== "미선택") {
+                let menuName = o.cat;
+                if (o.item) {
+                    menuName = o.item;
+                } else if (state.store === "시골커피" && o.temp !== "미선택") {
+                    menuName += ` (${o.temp})`;
+                }
+                
+                if (state.store === "신송초밥" && MENUS["신송초밥"].prices[o.cat]) {
+                    menuName += ` (${MENUS["신송초밥"].prices[o.cat].toLocaleString()}원)`;
+                }
+
+                summaryCounts.set(menuName, (summaryCounts.get(menuName) || 0) + 1);
+
+                if (state.store === "신송초밥" && MENUS["신송초밥"].prices[o.cat]) {
+                    totalPrice += MENUS["신송초밥"].prices[o.cat];
+                }
+
+                let detail = `${o.cat}`;
+                if (o.item) detail = `${o.item}`;
+                if (o.temp !== "미선택") detail += ` (${o.temp})`;
+                if (o.notes) detail += ` - 비고: ${o.notes}`;
+                
+                detailLines.push(`${n}: ${detail}`);
+            }
+        });
+        
+        lines.push(`주문 (${new Date().toLocaleString()} / ${state.store})`);
+        lines.push("--------------------------");
+        
+        lines.push(...detailLines);
+        
+        if (state.store === "신송초밥" && totalPrice > 0) {
+            lines.push("");
+            lines.push(`총 금액: ${totalPrice.toLocaleString()}원`);
+        }
+        
+        lines.push("");
+        lines.push("[가게 전달 멘트]");
+
+        const orderedPeopleCount = detailLines.length;
+        const unit = state.store === "신송초밥" ? "개" : "잔";
+        const parts = Array.from(summaryCounts.entries()).map(([k, v]) => `${k} ${v}${unit}`);
+        
+        if (orderedPeopleCount > 0) {
+            lines.push(`안녕하세요, ${parts.join(", ")} 부탁드립니다. 주문은 ${orderedPeopleCount}명입니다.`);
+        } else {
+            lines.push("안녕하세요, 주문을 취합 중입니다. 최종 내역은 곧 전달드리겠습니다.");
+        }
+        
+        summary.value = lines.join("\n");
+    }
+    
+    function selectStore(storeName) {
+        state.store = storeName;
+        state.menu = MENUS[storeName];
+
+        let newOrders = {};
+        NAMES.forEach(n => newOrders[n] = { cat: "미선택", item: "", temp: "미선택", notes: "" });
+        
+        if (storeName === "시골커피") {
+            newOrders["위원장"] = { cat: "아메리카노", item: "", temp: "아이스", notes: "" };
+            newOrders["유동철"] = { cat: "레몬티", item: "", temp: "핫", notes: "" };
+            newOrders["유영현"] = { cat: "아메리카노", item: "", temp: "아이스", notes: "" };
+            newOrders["이상준"] = { cat: "아메리카노", item: "", temp: "아이스", notes: "" };
+            newOrders["과장"] = { cat: "디카페인", item: "", temp: "아이스", notes: "" };
+        }
+        
+        if (state.extraNames) {
+            state.extraNames.forEach(name => {
+                newOrders[name] = { cat: "미선택", item: "", temp: "미선택", notes: "" };
+            });
+        }
+        
+        state.orders = newOrders;
+        
+        saveState();
+        storeEl.value = storeName;
+
+        const storeButtons = document.querySelectorAll('#store-links .store-pill');
+        storeButtons.forEach(btn => {
+            btn.classList.remove('on');
+        });
+        document.getElementById(`${storeName === '시골커피' ? 'sigolCoffeeBtn' : 'shinsongSushiBtn'}`).classList.add('on');
+
+
+        sigolCoffeeButtons.style.display = storeName === "시골커피" ? 'flex' : 'none';
+        shinsongSushiButtons.style.display = storeName === "신송초밥" ? 'flex' : 'none';
+        
+        render();
+    }
+
+    state = loadState();
+
+    storeEl.value = state.store;
+    storeEl.addEventListener("input", () => {
+        state.store = storeEl.value;
+        saveState();
+        updateSummary();
+    });
+
+    sigolCoffeeBtn.addEventListener("click", () => selectStore("시골커피"));
+    shinsongSushiBtn.addEventListener("click", () => selectStore("신송초밥"));
+    shinsongSearchBtn.addEventListener("click", () => {
+        const query = encodeURIComponent("신송초밥 메뉴");
+        window.open(`https://m.search.naver.com/search.naver?query=${query}`, "_blank");
+    });
+    
+    addPersonBtn.addEventListener("click", () => {
+        newPersonInput.style.display = 'block';
+        newPersonInput.focus();
+    });
+
+    newPersonInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            const newName = newPersonInput.value.trim();
+            if (newName && !NAMES.includes(newName)) {
+                state.orders[newName] = { cat: "미선택", item: "", temp: "미선택", notes: "" };
+                NAMES.push(newName);
+                state.extraNames = state.extraNames || [];
+                state.extraNames.push(newName);
+                saveState();
+                render();
+                newPersonInput.value = "";
+                newPersonInput.style.display = 'none';
+            } else if (NAMES.includes(newName)) {
+                alert("이미 존재하는 이름입니다.");
+            } else {
+                newPersonInput.style.display = 'none';
+            }
+        }
+    });
+
+    resetBtn.addEventListener("click", () => {
+        if (confirm("정말로 모든 주문 내역을 초기화하시겠습니까?")) {
+            localStorage.removeItem(STORAGE_KEY);
+            state = defaults();
+            NAMES = [...DEFAULT_NAMES];
+            storeEl.value = state.store;
+            sigolCoffeeButtons.style.display = 'flex';
+            shinsongSushiButtons.style.display = 'none';
+            render();
+        }
+    });
+
+    copyBtn.addEventListener("click", () => {
+        const textToCopy = summary.value.split("[가게 전달 멘트]")[0].trim();
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => alert("주문 내용이 클립보드에 복사되었습니다!"))
+            .catch(err => console.error('복사 실패:', err));
+    });
+
+    window.addEventListener('load', () => {
+        if (state.extraNames) {
+            NAMES = [...DEFAULT_NAMES, ...state.extraNames];
+        }
+        selectStore(state.store);
+    });
+})();
+</script>
+</body>
+</html>
