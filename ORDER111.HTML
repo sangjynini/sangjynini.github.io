@@ -13,6 +13,8 @@
             --accent: #0f172a;
             --red: #fca5a5;
             --red-bg: #fee2e2;
+            --gray: #94a3b8;
+            --gray-bg: #e2e8f0;
         }
 
         /* 기본 스타일 */
@@ -134,7 +136,6 @@
             display: flex;
             gap: 8px;
         }
-
         #addPersonContainer {
             margin-bottom: 12px;
             display: flex;
@@ -168,6 +169,8 @@
             <a href="tel:0512064228"><button>📞 전화걸기</button></a>
             <button id="shinsongSearchBtn">네이버 검색</button>
         </div>
+        
+        <button id="otherStoreBtn" class="store-pill">기타 식당</button>
     </div>
     
     <table>
@@ -213,6 +216,10 @@
                 "조기탕": 15000,
                 "알탕": 15000
             }
+        },
+        "기타 식당": {
+            cats: ["미선택"],
+            temps: ["미선택"]
         }
     };
     
@@ -229,6 +236,7 @@
     const shinsongSushiBtn = document.getElementById("shinsongSushiBtn");
     const shinsongSushiButtons = document.getElementById("shinsongSushiButtons");
     const shinsongSearchBtn = document.getElementById("shinsongSearchBtn");
+    const otherStoreBtn = document.getElementById("otherStoreBtn");
     
     const addPersonBtn = document.getElementById("addPersonBtn");
     const newPersonInput = document.getElementById("newPersonInput");
@@ -305,45 +313,63 @@
 
             const tdMenu = document.createElement("td");
             
-            const catRow = document.createElement("div");
-            catRow.className = "pill-row";
-            state.menu.cats.forEach(c => catRow.appendChild(createPill(c, o.cat === c, () => {
-                o.cat = c;
-                if(state.store === "신송초밥") {
-                    o.temp = "미선택";
-                    o.item = "";
-                }
-                state.orders[n] = o;
-                saveState();
-                render();
-            })));
-            tdMenu.appendChild(catRow);
+            if (state.store === "기타 식당") {
+                const item = document.createElement("input");
+                item.type = "text";
+                item.className = "menu-input";
+                item.placeholder = "메뉴 입력";
+                item.value = o.item;
+                item.addEventListener("input", () => {
+                    o.item = item.value;
+                    state.orders[n] = o;
+                    saveState();
+                    updateSummary();
+                });
+                tdMenu.appendChild(item);
+                
+                o.cat = "미선택";
+                o.temp = "미선택";
 
-            const item = document.createElement("input");
-            item.type = "text";
-            item.className = "menu-input";
-            item.placeholder = "세부 메뉴 (예: 바닐라 라떼)";
-            item.value = o.item;
-            item.addEventListener("input", () => {
-                o.item = item.value;
-                state.orders[n] = o;
-                saveState();
-                updateSummary();
-            });
-            tdMenu.appendChild(item);
-
-            if (state.store === "시골커피") {
-                const tempRow = document.createElement("div");
-                tempRow.className = "pill-row";
-                state.menu.temps.forEach(t => tempRow.appendChild(createPill(t, o.temp === t, () => {
-                    o.temp = t;
+            } else {
+                const catRow = document.createElement("div");
+                catRow.className = "pill-row";
+                state.menu.cats.forEach(c => catRow.appendChild(createPill(c, o.cat === c, () => {
+                    o.cat = c;
+                    if(state.store === "신송초밥") {
+                        o.temp = "미선택";
+                        o.item = "";
+                    }
                     state.orders[n] = o;
                     saveState();
                     render();
                 })));
-                tdMenu.appendChild(tempRow);
-            }
+                tdMenu.appendChild(catRow);
 
+                const item = document.createElement("input");
+                item.type = "text";
+                item.className = "menu-input";
+                item.placeholder = "세부 메뉴 (예: 바닐라 라떼)";
+                item.value = o.item;
+                item.addEventListener("input", () => {
+                    o.item = item.value;
+                    state.orders[n] = o;
+                    saveState();
+                    updateSummary();
+                });
+                tdMenu.appendChild(item);
+
+                if (state.store === "시골커피") {
+                    const tempRow = document.createElement("div");
+                    tempRow.className = "pill-row";
+                    state.menu.temps.forEach(t => tempRow.appendChild(createPill(t, o.temp === t, () => {
+                        o.temp = t;
+                        state.orders[n] = o;
+                        saveState();
+                        render();
+                    })));
+                    tdMenu.appendChild(tempRow);
+                }
+            }
             tr.appendChild(tdMenu);
 
             const tdNotes = document.createElement("td");
@@ -373,30 +399,44 @@
 
         NAMES.forEach(n => {
             const o = state.orders[n];
-            if (o && o.cat !== "미선택") {
-                let menuName = o.cat;
-                if (o.item) {
-                    menuName = o.item;
-                } else if (state.store === "시골커피" && o.temp !== "미선택") {
-                    menuName += ` (${o.temp})`;
+            if (o) {
+                let menuName = "";
+                let detail = "";
+                
+                if (state.store === "기타 식당") {
+                    if (o.item) {
+                        menuName = o.item;
+                        detail = `${o.item}`;
+                    }
+                } else if (o.cat !== "미선택") {
+                    menuName = o.cat;
+                    detail = `${o.cat}`;
+                    
+                    if (o.item) {
+                        menuName = o.item;
+                        detail = `${o.item}`;
+                    }
+                    
+                    if (state.store === "시골커피" && o.temp !== "미선택") {
+                        menuName += ` (${o.temp})`;
+                        detail += ` (${o.temp})`;
+                    }
+                }
+                
+                if (menuName) {
+                    summaryCounts.set(menuName, (summaryCounts.get(menuName) || 0) + 1);
                 }
                 
                 if (state.store === "신송초밥" && MENUS["신송초밥"].prices[o.cat]) {
-                    menuName += ` (${MENUS["신송초밥"].prices[o.cat].toLocaleString()}원)`;
+                    const price = MENUS["신송초밥"].prices[o.cat];
+                    detail += ` (${price.toLocaleString()}원)`;
+                    totalPrice += price;
                 }
 
-                summaryCounts.set(menuName, (summaryCounts.get(menuName) || 0) + 1);
-
-                if (state.store === "신송초밥" && MENUS["신송초밥"].prices[o.cat]) {
-                    totalPrice += MENUS["신송초밥"].prices[o.cat];
+                if (detail) {
+                    if (o.notes) detail += ` - 비고: ${o.notes}`;
+                    detailLines.push(`${n}: ${detail}`);
                 }
-
-                let detail = `${o.cat}`;
-                if (o.item) detail = `${o.item}`;
-                if (o.temp !== "미선택") detail += ` (${o.temp})`;
-                if (o.notes) detail += ` - 비고: ${o.notes}`;
-                
-                detailLines.push(`${n}: ${detail}`);
             }
         });
         
@@ -414,7 +454,8 @@
         lines.push("[가게 전달 멘트]");
 
         const orderedPeopleCount = detailLines.length;
-        const unit = state.store === "신송초밥" ? "개" : "잔";
+        // 이 부분을 수정했습니다. '신송초밥' 또는 '기타 식당'일 경우 '개'를 사용합니다.
+        const unit = (state.store === "신송초밥" || state.store === "기타 식당") ? "개" : "잔";
         const parts = Array.from(summaryCounts.entries()).map(([k, v]) => `${k} ${v}${unit}`);
         
         if (orderedPeopleCount > 0) {
@@ -456,7 +497,7 @@
         storeButtons.forEach(btn => {
             btn.classList.remove('on');
         });
-        document.getElementById(`${storeName === '시골커피' ? 'sigolCoffeeBtn' : 'shinsongSushiBtn'}`).classList.add('on');
+        document.getElementById(`${storeName === '시골커피' ? 'sigolCoffeeBtn' : storeName === '신송초밥' ? 'shinsongSushiBtn' : 'otherStoreBtn'}`).classList.add('on');
 
 
         sigolCoffeeButtons.style.display = storeName === "시골커피" ? 'flex' : 'none';
@@ -476,6 +517,7 @@
 
     sigolCoffeeBtn.addEventListener("click", () => selectStore("시골커피"));
     shinsongSushiBtn.addEventListener("click", () => selectStore("신송초밥"));
+    otherStoreBtn.addEventListener("click", () => selectStore("기타 식당"));
     shinsongSearchBtn.addEventListener("click", () => {
         const query = encodeURIComponent("신송초밥 메뉴");
         window.open(`https://m.search.naver.com/search.naver?query=${query}`, "_blank");
